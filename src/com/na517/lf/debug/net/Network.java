@@ -180,12 +180,13 @@ public class Network {
     }
 
     /**
-     * @param serviceMap
-     * @param param
+     * @description 发送post请求
+     * @date 2015年6月15日
+     * @param request
      * @return
      * @throws ClientProtocolException
      * @throws IOException
-     * @throws JSONException
+     * @throws Exception
      */
     public static String post(Request request) throws
                                                                           ClientProtocolException,
@@ -207,6 +208,7 @@ public class Network {
                 stringParam = jsonParam.toString();
             }
             System.out.println("stringParam=" + stringParam);
+            // Base64编码
             base64Param = new String(Base64Helper.encode(stringParam.getBytes()));
             StringEntity requestParam = new StringEntity(base64Param,CHARSET);
             httpPost.setEntity(requestParam);
@@ -223,7 +225,7 @@ public class Network {
                         return null;
                     }
                     String base64String = new String(gzipBytes,"ISO-8859-1");
-//                    String base64String = new String(gzipString.getBytes(),"ISO-8859-1");
+                    // Base64解码
                     byte[] base64Bytes = Base64Helper.decode(base64String);
                     result = new String(base64Bytes,CHARSET);
                     System.out.println("Base64 decode result=" + result);

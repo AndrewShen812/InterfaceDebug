@@ -50,97 +50,92 @@ import com.mysql.jdbc.log.LogUtils;
  * @version V1.0
  */
 public class Network {
-
+    
     private static final String TAG = "NetworkUtils";
-
+    
     private static final String CHARSET = HTTP.UTF_8;
-
+    
     private static int CONNECTION_TIMEOUT = 40000;
-
+    
     private static HttpClient httpClient = getHttpClient();
-
+    
     private Network() {
-
+        
     }
-
+    
     private static HttpClient getHttpClient() {
         HttpParams params = new BasicHttpParams();
         // 设置一些基本参数
         
-//        params.setParameter("Accept-Encoding", "gzip");
+        // params.setParameter("Accept-Encoding", "gzip");
         
-        HttpProtocolParams.setVersion(params,HttpVersion.HTTP_1_1);
-        HttpProtocolParams.setContentCharset(params,CHARSET);
-        HttpProtocolParams.setUseExpectContinue(params,false);
+        HttpProtocolParams.setVersion(params, HttpVersion.HTTP_1_1);
+        HttpProtocolParams.setContentCharset(params, CHARSET);
+        HttpProtocolParams.setUseExpectContinue(params, false);
         HttpProtocolParams.setUserAgent(params,
-                "Mozilla/5.0(Linux;U;Android 2.2.1;en-us;Nexus One Build.FRG83) " + "AppleWebKit/553.1(KHTML,like Gecko) Version/4.0 Mobile Safari/533.1");
+                                        "Mozilla/5.0(Linux;U;Android 2.2.1;en-us;Nexus One Build.FRG83) " + "AppleWebKit/553.1(KHTML,like Gecko) Version/4.0 Mobile Safari/533.1");
         // 超时设置
         /* 连接超时 */
-        HttpConnectionParams.setConnectionTimeout(params,CONNECTION_TIMEOUT);
+        HttpConnectionParams.setConnectionTimeout(params, CONNECTION_TIMEOUT);
         /* 请求超时 */
-        HttpConnectionParams.setSoTimeout(params,CONNECTION_TIMEOUT);
-        ConnManagerParams.setTimeout(params,CONNECTION_TIMEOUT);
-
+        HttpConnectionParams.setSoTimeout(params, CONNECTION_TIMEOUT);
+        ConnManagerParams.setTimeout(params, CONNECTION_TIMEOUT);
+        
         // 设置我们的HttpClient支持HTTP和HTTPS两种模式
         SchemeRegistry schReg = new SchemeRegistry();
-        schReg.register(new Scheme("http",PlainSocketFactory.getSocketFactory(),80));
-
+        schReg.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
+        
         // 使用线程安全的连接管理来创建HttpClient
-        ClientConnectionManager conMgr = new ThreadSafeClientConnManager(params,schReg);
-        DefaultHttpClient httpClient = new DefaultHttpClient(conMgr,params);
-        httpClient.setHttpRequestRetryHandler(new DefaultHttpRequestRetryHandler(0,false));
+        ClientConnectionManager conMgr = new ThreadSafeClientConnManager(params, schReg);
+        DefaultHttpClient httpClient = new DefaultHttpClient(conMgr, params);
+        httpClient.setHttpRequestRetryHandler(new DefaultHttpRequestRetryHandler(0, false));
         workAroundReverseDnsBugInHoneycombAndEarlier(httpClient);
-
+        
         return httpClient;
     }
-
+    
     private static void workAroundReverseDnsBugInHoneycombAndEarlier(HttpClient client) {
         // Android had a bug where HTTPS made reverse DNS lookups (fixed in Ice
         // Cream Sandwich)
         // https://code.google.com/p/android/issues/detail?id=13117
         SocketFactory socketFactory = new LayeredSocketFactory() {
-
+            
             SSLSocketFactory mDelegate = SSLSocketFactory.getSocketFactory();
-
+            
             @Override
             public Socket createSocket() throws IOException {
                 return mDelegate.createSocket();
             }
-
+            
             @Override
-            public Socket connectSocket(Socket sock,
-                                        String host,
-                                        int port,
-                                        InetAddress localAddress,
-                                        int localPort,
-                                        HttpParams params) throws IOException {
-                return mDelegate.connectSocket(sock,host,port,localAddress,localPort,params);
+            public Socket connectSocket(Socket sock, String host, int port, InetAddress localAddress, int localPort, HttpParams params) throws IOException {
+                return mDelegate.connectSocket(sock, host, port, localAddress, localPort, params);
             }
-
+            
             @Override
             public boolean isSecure(Socket sock) throws IllegalArgumentException {
                 return mDelegate.isSecure(sock);
             }
-
+            
             @Override
-            public Socket createSocket(Socket socket,String host,int port,boolean autoClose) throws IOException {
-                injectHostname(socket,host);
-                return mDelegate.createSocket(socket,host,port,autoClose);
+            public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException {
+                injectHostname(socket, host);
+                return mDelegate.createSocket(socket, host, port, autoClose);
             }
-
-            private void injectHostname(Socket socket,String host) {
+            
+            private void injectHostname(Socket socket, String host) {
                 try {
                     Field field = InetAddress.class.getDeclaredField("hostName");
                     field.setAccessible(true);
-                    field.set(socket.getInetAddress(),host);
+                    field.set(socket.getInetAddress(), host);
                 }
-                catch(Exception ignored) {
+                catch (Exception ignored) {
                 }
             }
         };
-        client.getConnectionManager().getSchemeRegistry().register(new Scheme("https",socketFactory,443));
+        client.getConnectionManager().getSchemeRegistry().register(new Scheme("https", socketFactory, 443));
     }
-
+    
     /**
      * 设置超时
      * 
@@ -150,35 +145,35 @@ public class Network {
      * @Exception
      */
     public static void setConnectionTimeout(int timeout) {
-        if(CONNECTION_TIMEOUT != timeout) {
+        if (CONNECTION_TIMEOUT != timeout) {
             CONNECTION_TIMEOUT = timeout;
-            httpClient.getParams().setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT,timeout);// 连接超时
-            httpClient.getParams().setParameter(CoreConnectionPNames.SO_TIMEOUT,timeout);// 请求超时
+            httpClient.getParams().setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, timeout);// 连接超时
+            httpClient.getParams().setParameter(CoreConnectionPNames.SO_TIMEOUT, timeout);// 请求超时
         }
     }
-
+    
     /**
      * 组装请求参数
      */
     private static JSONObject getJsonObjectParam(Request request) {
         JSONObject data = JSON.parseObject(request.data);
         JSONObject json = new JSONObject();
-     // 非开放平台底层协议
+        // 非开放平台底层协议
         String sign = MD5.getMD5Code(request.data + ";UUID=" + request.uuid);
         json.put("m", request.machineCode);
         json.put("t", request.token);
-        json.put("a",request.action);
-        json.put("s",sign);
-        json.put("v",request.version);
-        json.put("at",1); // 1：Android-phone 2:android平板 3:ipad 4:iphone
-        json.put("d",data);
+        json.put("a", request.action);
+        json.put("s", sign);
+        json.put("v", request.version);
+        json.put("at", 1); // 1：Android-phone 2:android平板 3:ipad 4:iphone
+        json.put("d", data);
         json.put("u", request.user);
-
+        
         System.out.println("jsonParam=" + json.toJSONString());
         
         return json;
     }
-
+    
     /**
      * @description 发送post请求
      * @date 2015年6月15日
@@ -188,10 +183,7 @@ public class Network {
      * @throws IOException
      * @throws Exception
      */
-    public static String post(Request request) throws
-                                                                          ClientProtocolException,
-                                                                          IOException,
-                                                                          Exception {
+    public static String post(Request request) throws ClientProtocolException, IOException, Exception {
         setConnectionTimeout(30 * 1000);
         HttpPost httpPost = null;
         try {
@@ -210,54 +202,54 @@ public class Network {
             System.out.println("stringParam=" + stringParam);
             // Base64编码
             base64Param = new String(Base64Helper.encode(stringParam.getBytes()));
-            StringEntity requestParam = new StringEntity(base64Param,CHARSET);
+            StringEntity requestParam = new StringEntity(base64Param, CHARSET);
             httpPost.setEntity(requestParam);
             HttpResponse response = httpClient.execute(httpPost);
             // 解析返回内容
-            if(response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+            if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
                 HttpEntity entity = response.getEntity();
-                if(entity != null) {
+                if (entity != null) {
                     String result = "";
-                    String gzipString = EntityUtils.toString(entity,CHARSET);
+                    String gzipString = EntityUtils.toString(entity, CHARSET);
                     System.out.println("gzipString=" + gzipString);
                     byte[] gzipBytes = GZipUtils.unGZip(gzipString.getBytes("ISO-8859-1"));
-                    if(gzipBytes == null) {
+                    if (gzipBytes == null) {
                         return null;
                     }
-                    String base64String = new String(gzipBytes,"ISO-8859-1");
+                    String base64String = new String(gzipBytes, "ISO-8859-1");
                     // Base64解码
                     byte[] base64Bytes = Base64Helper.decode(base64String);
-                    result = new String(base64Bytes,CHARSET);
+                    result = new String(base64Bytes, CHARSET);
                     System.out.println("Base64 decode result=" + result);
                     return result;
                 }
             }
             else {
-                if(httpPost != null) {
+                if (httpPost != null) {
                     httpPost.abort();
                 }
             }
         }
-        catch(UnsupportedEncodingException e) {
-            if(httpPost != null) {
+        catch (UnsupportedEncodingException e) {
+            if (httpPost != null) {
                 httpPost.abort();
             }
             throw e;
         }
-        catch(ParseException e) {
-            if(httpPost != null) {
+        catch (ParseException e) {
+            if (httpPost != null) {
                 httpPost.abort();
             }
             throw e;
         }
-        catch(IOException e) {
-            if(httpPost != null) {
+        catch (IOException e) {
+            if (httpPost != null) {
                 httpPost.abort();
             }
             throw e;
         }
-
+        
         return null;
     }
-
+    
 }

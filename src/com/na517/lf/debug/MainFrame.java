@@ -430,13 +430,8 @@ public class MainFrame extends JFrame {
             mNetThread = null;
         }
         
-        for (int i=0 ; i<100; i++) {
-            mNetThread = new NetThread(mRequest);
-            mNetThread.start();
-            //Thread.sleep(个数/总发送时间);
-        }
-//        mNetThread = new NetThread(mRequest);
-//        mNetThread.start();
+        mNetThread = new NetThread(mRequest);
+        mNetThread.start();
     }
     
     /**

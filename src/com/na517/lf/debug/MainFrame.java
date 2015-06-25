@@ -71,6 +71,8 @@ public class MainFrame extends JFrame {
     
     private JButton btnClear;
     
+    private JButton btnErrCode;
+    
     private JLabel lblUuid;
     
     private JTextField txtUuid;
@@ -84,6 +86,8 @@ public class MainFrame extends JFrame {
     private Request mRequest;
     
     private Thread mNetThread;
+    
+    private ErrCodeFrame mErrFrame;
     
     /**
      * Launch the application.
@@ -110,7 +114,7 @@ public class MainFrame extends JFrame {
         setTitle("接口调试工具 ");
         
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setBounds(100, 100, 722, 538);
+        setBounds(100, 100, 700, 540);
         contentPane = new JPanel();
         contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
         setContentPane(contentPane);
@@ -203,6 +207,10 @@ public class MainFrame extends JFrame {
         cbRequestHasAll.setBounds(86, 84, 254, 23);
         contentPane.add(cbRequestHasAll);
         
+        btnErrCode = new JButton("错误码");
+        btnErrCode.setBounds(10, 329, 75, 23);
+        contentPane.add(btnErrCode);
+        
         mRequest = new Request();
         setActionListener();
         
@@ -269,6 +277,34 @@ public class MainFrame extends JFrame {
                 else {
                     isParamAll = false;
                     enableOther();
+                }
+            }
+        });
+        btnErrCode.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent arg0) {
+                if (null == mErrFrame) {
+                    System.out.println("new ErrFrame.");
+                    mErrFrame = ErrCodeFrame.getInstance();
+                    mErrFrame.setVisible(true);
+                }
+                else {
+                    if (!mErrFrame.isVisible()) {
+                        mErrFrame.setVisible(true);
+                    }
+                }
+                int mX = mFrame.getX();
+                int mY = mFrame.getY();
+                int mW = mFrame.getWidth();
+                int mH = mFrame.getHeight();
+                System.out.println("mX=" + mX);
+                System.out.println("mY=" + mY);
+                System.out.println("mW=" + mW);
+                System.out.println("mH=" + mH);
+                
+                mErrFrame.setLocation(mFrame.getX() + (mFrame.getWidth() / 3), mFrame.getY() + (mFrame.getHeight() / 3));
+                
+                if (!mErrFrame.isFocusableWindow()) {
+                    mErrFrame.setFocusableWindowState(true);
                 }
             }
         });
@@ -393,8 +429,14 @@ public class MainFrame extends JFrame {
             mNetThread.interrupt();
             mNetThread = null;
         }
-        mNetThread = new NetThread(mRequest);
-        mNetThread.start();
+        
+        for (int i=0 ; i<100; i++) {
+            mNetThread = new NetThread(mRequest);
+            mNetThread.start();
+            //Thread.sleep(个数/总发送时间);
+        }
+//        mNetThread = new NetThread(mRequest);
+//        mNetThread.start();
     }
     
     /**
@@ -435,5 +477,4 @@ public class MainFrame extends JFrame {
             }
         }
     }
-    
 }
